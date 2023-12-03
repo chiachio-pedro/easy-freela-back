@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import demandService from '../services/demandService'
+import { UserData } from '../types/demandTypes'
 
 async function createDemand(req: Request, res: Response){
 	try{
@@ -63,6 +64,40 @@ async function removeDemand(req: Request, res: Response) {
 		res.status(400).json({ error })
 	}
 }
-  
 
-export default { createDemand, showDemand, updateDemand, showDemandById, removeDemand}
+function validateData(userData: UserData) {
+	const {
+		name,
+		aboutMe,
+		email,
+		phone,
+		portfolioLink,
+		linkedInLink,
+		gitHubLink,
+		contractorEmail,
+	} = userData
+ 
+	if (!name || !aboutMe || !email || !phone || !portfolioLink || !linkedInLink || !gitHubLink || !contractorEmail) {
+		throw new Error('Todos os campos são obrigatórios')
+	}
+ 
+	return userData
+}
+
+export async function registerOnDemand(req: Request, res: Response) {
+	try {
+		const userData = validateData(req.body)
+
+		await demandService.registerOnDemand(
+			userData
+		)
+
+		res.status(200).json({ message: 'Applying successfully' })
+	} catch (error) {
+		res.status(500).json({
+			message: (error as Error).message || 'An error occurred during to apply on demand',
+		})
+	}
+}
+
+export default { createDemand, showDemand, updateDemand, showDemandById, removeDemand, registerOnDemand}

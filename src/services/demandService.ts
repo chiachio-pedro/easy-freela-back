@@ -2,16 +2,10 @@
 import { makeError } from '../middlewares/errorHandler'
 import authRepository from '../repositories/authRepository'
 import demandRepository from '../repositories/demandRepository'
+import nodemailer from 'nodemailer'
+import { FieldsToUpdate, UserData } from '../types/demandTypes'
 
-interface FieldsToUpdate {
-	title?: string;
-	description?: string;
-	skills?: string;
-	invoice?: boolean;
-	link?: string;
-	dead_line?: Date | null;
-	demand_id?: number | null;
-  }
+
 
 async function validateContractor(email: string){
 	const user = await authRepository.findUserByEmail(email)
@@ -71,5 +65,38 @@ async function removeDemand(id: number) {
 		throw error
 	}
 }
-  
-export default { createDemand, showDemand, updateDemand, showDemandById, removeDemand }
+
+async function registerOnDemand(userData: UserData) {
+	try {
+		const transporter = nodemailer.createTransport({
+			service: 'gmail',
+			auth: {
+				user: String(process.env.USER_EMAIL),
+				pass: String(process.env.PASS),
+			},
+		})
+		const emailContent = `
+		<h3>&#128513; Olá, sua demanda obteve mais uma candidatura:</h3>
+		<p>Nome: ${userData.name}</p>
+		<p>Sobre o profissional: ${userData.aboutMe}</p>
+		<p>Email: ${userData.email}</p>
+		<p>Telefone: ${userData.phone}</p>
+		<p>Portfolio: ${userData.portfolioLink}</p>
+		<p>LinkedIn: ${userData.linkedInLink}</p>
+		<p>GitHub: ${userData.gitHubLink}</p>
+	`
+
+		await transporter.sendMail({
+			from: String(process.env.USER_EMAIL),
+			to: userData.contractorEmail,
+			subject: 'Aplicação de novo usuário em sua demanda',
+			html: emailContent,
+		})
+	} catch (error) {
+		throw makeError({
+			message: 'Error to apply on demand',
+			status: 500,
+		})
+	}
+}
+export default { createDemand, showDemand, updateDemand, showDemandById, removeDemand, registerOnDemand }
