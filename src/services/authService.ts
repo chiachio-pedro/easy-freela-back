@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer'
 dotenv.config()
 
 async function signUp(
+	name: string,
 	email: string,
 	password: string,
 	accountType: string
@@ -18,7 +19,8 @@ async function signUp(
 		const passwordHashed = await passwordHash.generatePassword(password)
 
 		if (passwordHashed) {
-			const newUser = authRepository.createUser(
+			const newUser = await authRepository.createUser(
+				name,
 				email,
 				passwordHashed,
 				accountType
@@ -36,6 +38,7 @@ async function login(email: string, password: string) {
 	}
 	const user = await authRepository.findUserByEmail(email)
 	const accountType =  user.account_type 
+	const userId = user.id
 
 	if (!user) {
 		throw makeError({ message: 'Email inválido', status: 400 })
@@ -48,13 +51,13 @@ async function login(email: string, password: string) {
 			// generate token
 			Reflect.deleteProperty(user, 'password')
 			const token = jwt.sign(
-				{ userId: user.id },
+				{ userId: user.id, accountType },
 				String(process.env.SECRET_KEY),
 				{
 					expiresIn: '10h',
 				}
 			)
-			return { token, accountType }
+			return { userId, token, accountType }
 			
 		} else {
 			throw makeError({ message: 'Senha inválida', status: 400 })

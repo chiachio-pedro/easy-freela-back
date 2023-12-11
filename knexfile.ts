@@ -8,8 +8,8 @@ const config: Knex.Config = {
 		host: process.env.HOST,
 		user: 'postgres',
 		password: process.env.DATABASE_PASSWORD,
-		database: 'postgres', 
-		port: 5432, 
+		database: 'railway', 
+		port: 57592, 
 	},
 	migrations: {
 		tableName: 'knex_migrations',

@@ -1,16 +1,24 @@
+
 import { Request, Response } from 'express'
 import demandService from '../services/demandService'
 import { UserData } from '../types/demandTypes'
 
-async function createDemand(req: Request, res: Response){
-	try{
-		const {title, description, skills, invoice, link, dead_line, email, price, phone} = req.body
-		await demandService.createDemand(title, description, skills, invoice, link, dead_line, email, price, phone)
+interface CustomRequest extends Request  {
+	token: {
+		userId: number;
+		accountType: string
+	}
+}
+
+async function createDemand(req: Request, res: Response) {
+	try {
+		const { title, description, dead_line, email, price, phone, user_id } = req.body
+		await demandService.createDemand(title, description, dead_line, email, price, phone, user_id)
 		res
 			.status(200)
 			.json({ message: 'Demanda cadastrada com sucesso' })
 
-	}catch(error){
+	} catch (error) {
 		res.status(400).json({ error })
 	}
 }
@@ -38,6 +46,32 @@ async function showDemandById(req: Request, res: Response) {
 	}
 }
 
+async function showDemandByUserId(req: CustomRequest, res: Response) {
+	try {
+		const demand = await demandService.showDemandByUserId(req.token.userId)
+		if (demand) {
+			res.status(200).json({ message: 'Demanda encontrada:', data: demand })
+		} else {
+			res.status(404).json({ message: 'Demanda não encontrada' })
+		}
+	} catch (error) {
+		res.status(400).json({ error })
+	}
+}
+
+async function showJobsById(req: CustomRequest, res: Response) {
+	try {
+		const demands = await demandService.showJobsById(Number(req.token.userId))
+		if (demands) {
+			res.status(200).json({ message: 'Lista de Projetos', data: demands })
+		} else {
+			res.status(404).json({ message: 'Nehnum projeto encontrado' })
+		}
+	} catch (error) {
+		res.status(400).json({ error })
+	}
+}
+
 async function updateDemand(req: Request, res: Response) {
 	try {
 		const id = parseInt(req.params.id, 10)
@@ -50,6 +84,15 @@ async function updateDemand(req: Request, res: Response) {
 	}
 }
 
+async function setFreelaDemand(req: Request, res: Response) {
+	try {
+		const { user_id, job_demand_id} = req.body
+		await demandService.setFreelaDemand(user_id, job_demand_id);
+		res.status(200).json({ message: 'Adicionado com sucesso' })
+	} catch (error) {
+		res.status(400).json({ error })
+	}
+}
 
 async function removeDemand(req: Request, res: Response) {
 	try {
@@ -76,11 +119,11 @@ function validateData(userData: UserData) {
 		gitHubLink,
 		contractorEmail,
 	} = userData
- 
+
 	if (!name || !aboutMe || !email || !phone || !portfolioLink || !linkedInLink || !gitHubLink || !contractorEmail) {
 		throw new Error('Todos os campos são obrigatórios')
 	}
- 
+
 	return userData
 }
 
@@ -100,4 +143,18 @@ export async function registerOnDemand(req: Request, res: Response) {
 	}
 }
 
-export default { createDemand, showDemand, updateDemand, showDemandById, removeDemand, registerOnDemand}
+
+
+function userDemands(req: Request, res: Response){
+	const customReq = req as CustomRequest;
+	if(typeof customReq.token === 'string'){
+		throw new Error("Bad token parsing")
+	} 
+	if (customReq.token.accountType === 'Contratante'){
+		return showDemandByUserId(customReq, res);
+	}else {
+		return showJobsById(customReq, res)
+	}
+}
+
+export default { createDemand, showDemand, updateDemand, showDemandById, removeDemand, registerOnDemand, setFreelaDemand, showJobsById, showDemandByUserId, userDemands}

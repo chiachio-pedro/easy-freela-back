@@ -8,6 +8,7 @@ export interface CustomRequest extends Request {
   token: string | JwtPayload;
 }
 
+
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const token = req.header('Authorization')?.replace('Bearer ', '')
@@ -18,7 +19,6 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
 
 		const decoded = jwt.verify(token, SECRET_KEY);
 		(req as CustomRequest).token = decoded
-
 		next()
 	} catch (err) {
 		res.send(err)

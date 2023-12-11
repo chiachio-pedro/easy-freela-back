@@ -13,6 +13,7 @@ async function findUserByEmail(email: string) {
 }
 
 async function createUser(
+	name: string,
 	email: string,
 	password: string,
 	account_type: string
@@ -22,6 +23,7 @@ async function createUser(
 	try {
 
 		const user = await db('users').insert({
+			name,
 			email,
 			password,
 			account_type,

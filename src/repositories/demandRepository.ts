@@ -7,23 +7,40 @@ const db = knex(config)
 async function createDemand(
 	title: string,
 	description: string,
-	skills: string,
-	invoice: boolean,
-	link: string,
+	//skills: string,
+	//invoice: boolean,
+	//link: string,
+	email: string,
 	dead_line: Date,
 	price: string,
-	phone: string
+	phone: string,
+	user_id: number
 ) {
 	try {
 		await db('job_demands').insert({
 			title,
 			description,
-			skills,
-			invoice,
-			link,
+			//skills,
+			//invoice,
+			//link,
 			dead_line,
 			price,
-			phone
+			phone,
+			user_id
+		})
+	} catch (error) {
+		console.error(error)
+	}
+}
+
+async function associationDemand(
+	user_id: number,
+	job_demand_id: number
+) {
+	try {
+		await db('user_job_demands').insert({
+			user_id,
+			job_demand_id
 		})
 	} catch (error) {
 		console.error(error)
@@ -57,6 +74,29 @@ async function showDemandById(id: number) {
 	}
 }
 
+async function showDemandByUserId(id: number) {
+	// eslint-disable-next-line no-useless-catch
+	try {
+		const demand = await db('job_demands').where('user_id', id)
+		return demand
+	} catch (error) {
+		throw error
+	}
+}
+
+async function showJobsById(id: number) {
+	// eslint-disable-next-line no-useless-catch
+	try {
+		const demands = await db('job_demands')
+		.select('*')
+		.join('user_job_demands as ujd', 'ujd.job_demand_id', '=', 'job_demands.id')
+		.where('ujd.user_id', '=', id)
+		return demands
+	} catch (error) {
+		throw error
+	}
+}
+
 async function updateDemand(id: number, fieldsToUpdate: FieldsToUpdate) {
 	// eslint-disable-next-line no-useless-catch
 	try {
@@ -79,4 +119,4 @@ async function removeDemand(id: number) {
 	}
 }
 
-export default { createDemand, getUserType, showDemand, updateDemand, showDemandById, removeDemand}
+export default { createDemand, getUserType, showDemand, updateDemand, showDemandById, removeDemand, associationDemand, showJobsById, showDemandByUserId}

@@ -7,37 +7,47 @@ import { FieldsToUpdate, UserData } from '../types/demandTypes'
 
 
 
-async function validateContractor(email: string){
+async function validateContractor(email: string) {
 	const user = await authRepository.findUserByEmail(email)
-	return user.contractor
+	return user.account_type
 }
 
 
 async function createDemand(
 	title: string,
 	description: string,
-	skills: string,
-	invoice: boolean,
-	link: string,
+	//skills: string,
+	//invoice: boolean,
+	//link: string,
 	dead_line: Date,
 	email: string,
 	price: string,
-	phone: string
-){
-	const accountType = validateContractor(email)
-	if (!accountType) {
-		throw makeError({
-			message: 'Somente usuários do tipo "contractor" podem criar demandas.',
-			status: 403
-		})
-	}
-	demandRepository.createDemand(title, description, skills, invoice, link, dead_line, price, phone)
-    
+	phone: string,
+	user_id: number
+) {
+	/*	const accountType = await validateContractor(email)
+	   if (accountType != "Contratante") {
+		   throw makeError({
+			   message: 'Somente usuários do tipo "contractor" podem criar demandas.',
+			   status: 403
+		   })
+	   } */
+	await demandRepository.createDemand(title, description, email, dead_line, price, phone, user_id)
+
 }
 
-async function showDemand(){
+async function showDemand() {
 	const demands = demandRepository.showDemand()
 	return demands
+}
+
+async function setFreelaDemand(
+	user_id: string,
+	job_demand_id: string
+) {
+	const userId = parseInt(user_id, 10)
+	const demand_id = parseInt(job_demand_id, 10)
+	const relation = await demandRepository.associationDemand(userId, demand_id)
 }
 
 async function showDemandById(id: number) {
@@ -49,10 +59,28 @@ async function showDemandById(id: number) {
 	}
 }
 
+async function showDemandByUserId(id: number) {
+	try {
+		const demand = await demandRepository.showDemandByUserId(id)
+		return demand
+	} catch (error) {
+		throw error
+	}
+}
+
+async function showJobsById(id: number) {
+	try {
+		const demands = await demandRepository.showJobsById(id)
+		return demands
+	} catch (error) {
+		throw error
+	}
+}
+
 async function updateDemand(id: number, fieldsToUpdate: FieldsToUpdate) {
 	try {
 		await demandRepository.updateDemand(id, fieldsToUpdate)
-	}catch (error) {
+	} catch (error) {
 		throw error
 	}
 }
@@ -99,4 +127,4 @@ async function registerOnDemand(userData: UserData) {
 		})
 	}
 }
-export default { createDemand, showDemand, updateDemand, showDemandById, removeDemand, registerOnDemand }
+export default { createDemand, showDemand, updateDemand, showDemandById, removeDemand, registerOnDemand, setFreelaDemand, showJobsById, showDemandByUserId }
